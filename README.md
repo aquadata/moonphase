@@ -14,6 +14,7 @@ Scripting Languages:
 * Janet
 * JavaScript
 * Python
+* Ruby
 * Raku
 
 DSLs:

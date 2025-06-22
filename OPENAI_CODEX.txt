@@ -1,0 +1,1295 @@
+% codex "explain this codebase to me"
+(node:75568) ExperimentalWarning: Importing JSON modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+╭──────────────────────────────────────────────────────────────╮
+│ ● OpenAI Codex (research preview) v0.1.2505172129            │
+╰──────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────╮
+│ localhost session: 3c8ec20050954489a8a826bae4db27d3          │
+│ ↳ workdir: ~/Developer/moonphase                             │
+│ ↳ model: codex-mini-latest                                   │
+│ ↳ provider: openai                                           │
+│ ↳ approval: suggest                                          │
+╰──────────────────────────────────────────────────────────────╯
+user
+explain this codebase to me
+
+    command
+
+    $ ls -1A .
+
+    command.stdout (code: 0, duration: 0s)
+
+    .git
+    .gitignore
+    arturo
+    awk
+    bc
+    c
+    fonts
+    index.html
+    janet
+    js
+    LICENSE
+    lua
+    nim
+    python
+    raku
+    README.md
+    rust
+    style.css
+    zig
+
+
+    command
+
+    $ sed -n '1,200p' README.md
+
+    command.stdout (code: 0, duration: 0s)
+
+    # moonphase - Werewolf Early Warning System
+
+    A collection of snippets that get the phase of the moon, currently, the implementations are:
+
+    Systems Level Languages:
+    * C/C++
+    * Rust
+    * Zig
+    * Nim
+
+    Scripting Languages:
+    * Arturo
+    * Lua
+    * Janet
+    * JavaScript
+    * Python
+    * Raku
+
+    DSLs:
+    * awk
+    * [bc](https://en.wikipedia.org/wiki/Bc_(programming_language))
+
+    These functions take a time as an input (usually in unix epoch seconds or the languages official way of doing time),
+    and return the "age" of the moon in radians, such that `(1-cos(x))/2` returns the illuminated fraction of the moons
+    surface, this indirection is needed because across a full cycle, the same illuminated percent appears more than once,
+    the first and third quarter are a good example.
+
+    All implementations contain test cases showing how to get the illuminated fraction and percent using the code.
+
+    When the age of the moon is converted into a range between `[0,1]`. You can then get the age
+    of the moon in days by multiplying it by ~29.5.
+
+    You can also get the "index" of the phase, required for the phase name and emoji, with
+    the illuminated fraction and the angle. As an example, here's [some rust code](https://github.com/oliverkwebb/deskephem/blob/main/src/value.rs#L70)
+    for a different tool using the same algorithm:
+
+    ```rust
+    fn phaseidx(ilumfrac: f64, ang: time::Angle) -> usize {
+        match (ilumfrac, ang.degrees() > 90.0) {
+            (0.00..0.04, _) => 0,
+            (0.96..1.00, _) => 4,
+            (0.46..0.54, true) => 6,
+            (0.46..0.54, false) => 2,
+            (0.54..0.96, true) => 5,
+            (0.54..0.96, false) => 3,
+            (_, true) => 7,
+            (_, false) => 1,
+        }
+    }
+    ```
+
+    (Note that your angle has to be converted to a positive angle with `a-360.0*(floor(a/360))` or some similar modulo [(not remainder)](https://www.man7.org/linux/man-pages/man3/fmod.3.html) operation)
+
+    All these snippets are based off the algorithm in `moontool`, a GUI program made in the 80s
+    by John Walker, which based its algorithms off the book *Practical Astronomy With Your Calculator*.
+
+    ---
+
+    # Rules for submission of [Favorite Language Here]
+
+    These rules may be bent for microlanguages and DSLs.
+
+    ## The Copy and Paste Rule
+
+    Your function must be self-contained, such that someone could copy-paste
+    it into their code and not get an error. It also must not effect the
+    environment outside it if at all possible (no `#define` or mutating globals).
+    It must be as "pure" and self-contained as the language will allow.
+
+
+
+    command
+
+    $ sed -n '200,400p' README.md
+
+    command.stdout (code: 0, duration: 0s)
+
+
+    command
+
+    $ sed -n '1,200p' index.html
+
+    command.stdout (code: 0, duration: 0s)
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+    	<meta charset="utf-8">
+    	<title>What is the moon phase?</title>
+    	<link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+    <main id="phaseInfoHere">
+    </main>
+    <script>
+    // Adapted from "moontool.c" by John Walker: See http://www.fourmilab.ch/moontool/
+    function moonphase(ud) {
+        let eccent = 0.016718; // Eccentricity of Earth's orbit
+        let elonge = 278.833540; // Ecliptic longitude of the Sun at epoch 1980.0
+        let elongp = 282.596403; // Ecliptic longitude of the Sun at perigee
+        let torad = Math.PI / 180.0;
+        const fixangle = a => ((a % 360) + 360) % 360;
+        // Calculation of the Sun's position
+        let Day = (ud / 86400 + 2440587.5) - 2444238.5; // Date within epoch
+        let M = torad * fixangle(((360 / 365.2422) * Day) + elonge - elongp); // Convert from perigee co-ordinates to epoch 1980.0
+        // Solve equation of Kepler
+        let e = M;
+        let delta;
+        do {
+            delta = e - eccent * Math.sin(e) - M;
+            e -= delta / (1 - eccent * Math.cos(e));
+        } while (Math.abs(delta) > 1E-6);
+        let Ec = e;
+        Ec = 2 * Math.atan(Math.sqrt((1 + eccent) / (1 - eccent)) * Math.tan(Ec / 2)); //  True anomaly
+        let Lambdasun = fixangle(((Ec) * (180.0 / Math.PI)) + elongp); // Sun's geocentric ecliptic longitude
+        let ml = fixangle(13.1763966 * Day + 64.975464); // Moon's mean lonigitude at the epoch
+        let MM = fixangle(ml - 0.1114041 * Day - 349.383063); // 349:  Mean longitude of the perigee at the epoch, Moon's mean anomaly
+        let Ev = 1.2739 * Math.sin(torad * (2 * (ml - Lambdasun) - MM)); // Evection
+        let Ae = 0.1858 * Math.sin(M); // Annual equation
+        let MmP = torad * (MM + Ev - Ae - (0.37 * Math.sin(M))); // Corrected anomaly
+        let lP = ml + Ev + (6.2886 * Math.sin(MmP)) - Ae + (0.214 * Math.sin(2 * MmP)); // Corrected longitude
+        let lPP = lP + (0.6583 * Math.sin(torad * (2 * (lP - Lambdasun)))); // True longitude
+        let MoonAge = lPP - Lambdasun; // Age of the Moon in degrees
+        return fixangle(MoonAge) * torad;
+    }
+
+    function illumfracof(pa) {
+    	return ((1 - Math.cos(pa)) / 2);
+    }
+
+    function phaseageof(pa) {
+    	return (pa / (2*Math.PI)) * 29.53058868;
+    }
+
+    let phasenames = ["New", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full", "Waning Gibbous", "Last Quarter", "Waning Crescent" ];
+    let emojis = ["🌑", "🌒", "🌓", "🌔", "🌕",  "🌖", "🌗", "🌘"];
+    let emojis_south = ["🌑", "🌘", "🌗", "🌖", "🌕",  "🌔", "🌓", "🌒"];
+
+    // PHASEINDEX --  Return phase based on Illuminated Fraction of the moon and age of the moon
+    function phaseindex(ilumfrac, mage)
+    {
+      let halfmonth = 14.76529434;
+      if      (ilumfrac < 0.04) return 0;
+      else if (ilumfrac > 0.96) return 4;
+      else if (ilumfrac > 0.46 && ilumfrac < 0.54) return (mage > halfmonth) ? 6 : 2;
+      else if (ilumfrac > 0.54 && ilumfrac < 0.96) return (mage > halfmonth) ? 5 : 3;
+      else    return (mage > halfmonth) ? 7 : 1;
+    }
+
+    function mooninfo(date) {
+    	let x = {};
+    	x.phaseangle = moonphase(date);
+    	x.illumfrac = illumfracof(x.phaseangle);
+    	x.mage = phaseageof(x.phaseangle);
+    	x.maged = Math.floor(x.mage);
+    	x.mageh = Math.floor((x.mage % 1)*24);
+    	x.idx = phaseindex(x.illumfrac, x.mage);
+    	return x;
+    }
+
+    function toreadablehm(decimaldays) {
+    	let days = Math.floor(decimaldays);
+    	let hours = Math.floor((decimaldays % 1)*24);
+    	return `${days} day${days == 1 ? '' : 's'}, ${hours} hour${hours == 1 ? '' : 's'}`;
+    }
+
+    	let now = Date.now()/1000;
+    	let main = mooninfo(now);
+
+    	let weekcast = [];
+    	let dates = [];
+    	let rangestart = now - 259200; // -3d
+    	for (i = 0; i < 7; i++) {
+    		let d = new Date(rangestart * 1000);
+    		dates[i] = `${d.getMonth()}/${d.getDate()}`;
+    		weekcast[i] = mooninfo(rangestart);
+    		rangestart += 86400;
+    	}
+
+    	let tillfullmoon = main.mage;
+    	if (main.mage > 14.76529434) {
+    		tillfullmoon -= 29.53058868;
+    	}
+    	tillfullmoon = 14.76529434 - tillfullmoon;
+    	
+    	let tillnewmoon = 29.53058868 - main.mage;
+
+    	let x = document.getElementById("phaseInfoHere");
+    	x.innerHTML = `
+    	<h1>${emojis[main.idx]} ${phasenames[main.idx]} (${(main.illumfrac*100).toFixed(1)}%)</h1>
+    	<p>Moon is ${toreadablehm(main.mage)} old</p>
+    	<hr>
+    	<table>
+    		<tr>${dates.map((d) => ("<td>" + d + "</td>")).join("")}</tr>
+    		<tr style="font-size: 1.5em;"> ${weekcast.map((f) => `<td>${emojis[f.idx]}<br>${(f.illumfrac*100).toFixed(0)}%</td>`).join("")} </tr>
+    	</table>
+    	<h2>Next full moon in ${toreadablehm(tillfullmoon)} | Next new moon in ${toreadablehm(tillnewmoon)}</h2>
+    	`;
+    </script>
+    <noscript>This is a widget that requires JavaScript to function</noscript>
+    </body>
+    </html>
+
+
+    command
+
+    $ ls js
+
+    command.stdout (code: 0, duration: 0s)
+
+    Makefile
+    moonphase-node.js
+    moonphase.js
+    node-bp.js
+    testpart.js
+
+
+    command
+
+    $ ls -1 c
+
+    command.stdout (code: 0, duration: 0s)
+
+    frontend.c
+    Makefile
+    moonphase.c
+
+
+    command
+
+    $ ls -1 python
+
+    command.stdout (code: 0, duration: 0s)
+
+    moonphase.py
+    test.py
+
+
+    command
+
+    $ ls -1 raku
+
+    command.stdout (code: 0, duration: 0s)
+
+    lib
+    moonphase.raku
+
+
+    command
+
+    $ ls -1 rust
+
+    command.stdout (code: 0, duration: 0s)
+
+    Cargo.lock
+    Cargo.toml
+    src
+
+
+    command
+
+    $ ls -1 lua
+
+    command.stdout (code: 0, duration: 0s)
+
+    frontend.lua
+    Makefile
+    moonphase.lua
+
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+    command
+
+    $ ls -1 nim
+
+    command.stdout (code: 0, duration: 0s)
+
+    moonphase.nim
+
+
+    command
+
+    $ ls arturo
+
+    command.stdout (code: 0, duration: 0s)
+
+    moonphase.art
+
+
+    command
+
+    $ ls -1 bc
+
+    command.stdout (code: 0, duration: 0s)
+
+    Makefile
+    moonphase.bc
+    moonphase.gnu.bc
+    moonphase.plan9.dc
+
+
+    command
+
+    $ ls -1 awk
+
+    command.stdout (code: 0, duration: 0s)
+
+    Makefile
+    moonphase.awk
+    testfile
+
+
+    command
+
+    $ ls zig
+
+    command.stdout (code: 0, duration: 0s)
+
+    moonphase.zig
+
+
+    command
+
+    $ ls fonts
+
+    command.stdout (code: 0, duration: 0s)
+
+    Jost-Italic-VariableFont_wght.ttf
+    Jost-VariableFont_wght.ttf
+
+
+    command
+
+    $ nl -w2 -ba README.md | sed -n '1,20p'
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	# moonphase - Werewolf Early Warning System
+     2	
+     3	A collection of snippets that get the phase of the moon, currently, the implementations are:
+     4	
+     5	Systems Level Languages:
+     6	* C/C++
+     7	* Rust
+     8	* Zig
+     9	* Nim
+    10	
+    11	Scripting Languages:
+    12	* Arturo
+    13	* Lua
+    14	* Janet
+    15	* JavaScript
+    16	* Python
+    17	* Raku
+    18	
+    19	DSLs:
+    20	* awk
+
+
+    command
+
+    $ nl -w2 -ba README.md | sed -n '20,40p'
+
+    command.stdout (code: 0, duration: 0s)
+
+    20	* awk
+    21	* [bc](https://en.wikipedia.org/wiki/Bc_(programming_language))
+    22	
+    23	These functions take a time as an input (usually in unix epoch seconds or the languages official way of doing time),
+    24	and return the "age" of the moon in radians, such that `(1-cos(x))/2` returns the illuminated fraction of the moons
+    25	surface, this indirection is needed because across a full cycle, the same illuminated percent appears more than once,
+    26	the first and third quarter are a good example.
+    27	
+    28	All implementations contain test cases showing how to get the illuminated fraction and percent using the code.
+    29	
+    30	When the age of the moon is converted into a range between `[0,1]`. You can then get the age
+    31	of the moon in days by multiplying it by ~29.5.
+    32	
+    33	You can also get the "index" of the phase, required for the phase name and emoji, with
+    34	the illuminated fraction and the angle. As an example, here's [some rust code](https://github.com/oliverkwebb/deskephem/blob/main/src/value.rs#L70)
+    35	for a different tool using the same algorithm:
+    36	
+    37	```rust
+    38	fn phaseidx(ilumfrac: f64, ang: time::Angle) -> usize {
+    39	    match (ilumfrac, ang.degrees() > 90.0) {
+    40	        (0.00..0.04, _) => 0,
+
+
+    command
+
+    $ nl -w2 -ba index.html | sed -n '13,66p'
+
+    command.stdout (code: 0, duration: 0s)
+
+    13	function moonphase(ud) {
+    14	    let eccent = 0.016718; // Eccentricity of Earth's orbit
+    15	    let elonge = 278.833540; // Ecliptic longitude of the Sun at epoch 1980.0
+    16	    let elongp = 282.596403; // Ecliptic longitude of the Sun at perigee
+    17	    let torad = Math.PI / 180.0;
+    18	    const fixangle = a => ((a % 360) + 360) % 360;
+    19	    // Calculation of the Sun's position
+    20	    let Day = (ud / 86400 + 2440587.5) - 2444238.5; // Date within epoch
+    21	    let M = torad * fixangle(((360 / 365.2422) * Day) + elonge - elongp); // Convert from perigee co-ordinates to epoch 1980.0
+    22	    // Solve equation of Kepler
+    23	    let e = M;
+    24	    let delta;
+    25	    do {
+    26	        delta = e - eccent * Math.sin(e) - M;
+    27	        e -= delta / (1 - eccent * Math.cos(e));
+    28	    } while (Math.abs(delta) > 1E-6);
+    29	    let Ec = e;
+    30	    Ec = 2 * Math.atan(Math.sqrt((1 + eccent) / (1 - eccent)) * Math.tan(Ec / 2)); //  True anomaly
+    31	    let Lambdasun = fixangle(((Ec) * (180.0 / Math.PI)) + elongp); // Sun's geocentric ecliptic longitude
+    32	    let ml = fixangle(13.1763966 * Day + 64.975464); // Moon's mean lonigitude at the epoch
+    33	    let MM = fixangle(ml - 0.1114041 * Day - 349.383063); // 349:  Mean longitude of the perigee at the epoch, Moon's mean anomaly
+    34	    let Ev = 1.2739 * Math.sin(torad * (2 * (ml - Lambdasun) - MM)); // Evection
+    35	    let Ae = 0.1858 * Math.sin(M); // Annual equation
+    36	    let MmP = torad * (MM + Ev - Ae - (0.37 * Math.sin(M))); // Corrected anomaly
+    37	    let lP = ml + Ev + (6.2886 * Math.sin(MmP)) - Ae + (0.214 * Math.sin(2 * MmP)); // Corrected longitude
+    38	    let lPP = lP + (0.6583 * Math.sin(torad * (2 * (lP - Lambdasun)))); // True longitude
+    39	    let MoonAge = lPP - Lambdasun; // Age of the Moon in degrees
+    40	    return fixangle(MoonAge) * torad;
+    41	}
+    42	
+    43	function illumfracof(pa) {
+    44		return ((1 - Math.cos(pa)) / 2);
+    45	}
+    46	
+    47	function phaseageof(pa) {
+    48		return (pa / (2*Math.PI)) * 29.53058868;
+    49	}
+    50	
+    51	let phasenames = ["New", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full", "Waning Gibbous", "Last Quarter", "Waning Crescent" ];
+    52	let emojis = ["🌑", "🌒", "🌓", "🌔", "🌕",  "🌖", "🌗", "🌘"];
+    53	let emojis_south = ["🌑", "🌘", "🌗", "🌖", "🌕",  "🌔", "🌓", "🌒"];
+    54	
+    55	// PHASEINDEX --  Return phase based on Illuminated Fraction of the moon and age of the moon
+    56	function phaseindex(ilumfrac, mage)
+    57	{
+    58	  let halfmonth = 14.76529434;
+    59	  if      (ilumfrac < 0.04) return 0;
+    60	  else if (ilumfrac > 0.96) return 4;
+    61	  else if (ilumfrac > 0.46 && ilumfrac < 0.54) return (mage > halfmonth) ? 6 : 2;
+    62	  else if (ilumfrac > 0.54 && ilumfrac < 0.96) return (mage > halfmonth) ? 5 : 3;
+    63	  else    return (mage > halfmonth) ? 7 : 1;
+    64	}
+    65	
+    66	function mooninfo(date) {
+
+
+    command
+
+    $ nl -w2 -ba style.css | sed -n '1,20p'
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	:root {
+     2	--bg: #0f3d99;
+     3	--fg: #e25344;
+     4	}
+     5	
+     6	/* Jost by Owen Earl */
+     7	@font-face {
+     8	font-family: "Jost";
+     9	font-style: normal;
+    10	src: url("./fonts/Jost-VariableFont_wght.ttf") format("truetype")
+    11	}
+    12	@font-face {
+    13	font-family: "Jost";
+    14	font-style: italic;
+    15	src: url("./fonts/Jost-Italic-VariableFont_wght.ttf") format("truetype")
+    16	}
+    17	
+    18	html {
+    19	background-color:var(--bg);
+    20	color: var(--fg);
+
+
+codex
+Below is a high‑level, guided tour of the moonphase codebase (aka “Werewolf Early Warning System”).  It’s essentially a collection of moon‑phase‑calculating snippets in a dozen languages, plus a lightweight static‑site front end that lets you
+ see today’s phase (and a week forecast) in your browser.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 1. What the project is (from the README)
+
+    # moonphase – Werewolf Early Warning System
+
+    A collection of snippets that get the phase of the moon, currently, the implementations are:
+
+    Systems Level Languages:
+    * C/C++
+    * Rust
+    * Zig
+    * Nim
+
+    Scripting Languages:
+    * Arturo
+    * Lua
+    * Janet
+    * JavaScript
+    * Python
+    * Raku
+
+    DSLs:
+    * awk
+    * [bc](https://en.wikipedia.org/wiki/Bc_(programming_language))
+    …
+    All implementations contain test cases showing how to get the illuminated fraction and percent using the code.
+    …
+
+README.md (/Users/REDACTED/Developer/moonphase/README.md)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 2. Static‑site front end
+
+At the repository root you’ll find a simple HTML/CSS/JS widget that computes and displays the current moon phase and a seven‑day mini‑forecast.
+
+### 2.1 Entry point: index.html
+
+This file pulls in style.css for fonts/colors and embeds a JavaScript implementation of the classic “moontool” algorithm:
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>What is the moon phase?</title>
+      <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+    <main id="phaseInfoHere"></main>
+    <script>
+    // Adapted from "moontool.c" by John Walker: See http://www.fourmilab.ch/moontool/
+    function moonphase(ud) {
+        let eccent = 0.016718;            // Eccentricity of Earth's orbit
+        …
+        return fixangle(MoonAge) * torad;
+    }
+
+    function illumfracof(pa) { return ((1 - Math.cos(pa)) / 2); }
+    function phaseageof(pa)   { return (pa / (2*Math.PI)) * 29.53058868; }
+
+    // PHASEINDEX –  Return phase based on Illuminated Fraction and age
+    function phaseindex(ilumfrac, mage) {
+      let halfmonth = 14.76529434;
+      if      (ilumfrac < 0.04)      return 0;
+      else if (ilumfrac > 0.96)      return 4;
+      else if (ilumfrac > 0.46 && ilumfrac < 0.54) return (mage > halfmonth) ? 6 : 2;
+      …
+    }
+    …
+    </script>
+    <noscript>This is a widget that requires JavaScript to function</noscript>
+    </body>
+    </html>
+
+index.html (/Users/REDACTED/Developer/moonphase/index.html)index.html (/Users/REDACTED/Developer/moonphase/index.html)
+
+### 2.2 Styling and fonts: style.css
+
+This stylesheet sets up a night‑sky color palette and embeds the “Jost” variable font from /fonts/:
+
+    :root {
+      --bg: #0f3d99;
+      --fg: #e25344;
+    }
+
+    /* Jost by Owen Earl */
+    @font-face {
+      font-family: "Jost";
+      font-style: normal;
+      src: url("./fonts/Jost-VariableFont_wght.ttf") format("truetype");
+    }
+    @font-face {
+      font-family: "Jost";
+      font-style: italic;
+      src: url("./fonts/Jost-Italic-VariableFont_wght.ttf") format("truetype");
+    }
+
+    html {
+      background-color: var(--bg);
+      color: var(--fg);
+    }
+    …
+
+style.css (/Users/REDACTED/Developer/moonphase/style.css)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 3. Language‑by‑language implementations
+
+Every supported language lives in its own subdirectory.  Each one is a self‑contained snippet plus a tiny test harness or Makefile if appropriate.  In most cases you can make or run a single script to see the function in action.
+
+┌───────────┬─────────────────┬──────────────────────────────────────────┐
+│ Directory │ Language        │ Key files                                │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ c/        │ C/C++           │ moonphase.c, frontend.c, Makefile        │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ rust/     │ Rust            │ Cargo.toml, src/lib.rs (and tests)       │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ zig/      │ Zig             │ moonphase.zig                            │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ nim/      │ Nim             │ moonphase.nim                            │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ arturo/   │ Arturo (JS‑ish) │ moonphase.art                            │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ lua/      │ Lua             │ moonphase.lua, frontend.lua, Makefile    │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ janet/    │ Janet           │ moonphase.janet                          │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ js/       │ JavaScript      │ moonphase.js, moonphase-node.js, tests   │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ python/   │ Python          │ moonphase.py, test.py                    │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ raku/     │ Raku            │ moonphase.raku, lib/…                    │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ awk/      │ awk             │ moonphase.awk, Makefile                  │
+├───────────┼─────────────────┼──────────────────────────────────────────┤
+│ bc/       │ bc / dc DSLs    │ moonphase.bc, moonphase.gnu.bc, Makefile │
+└───────────┴─────────────────┴──────────────────────────────────────────┘
+
+(There’s also a little test data file in awk/ and a Plan 9 dc variant in bc/.)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 4. Why so many languages?
+
+The idea is that you should be able to copy‑and‑paste the snippet for your favorite environment and get a pure, self‑contained moon‑phase function (plus tests) with no external dependencies beyond the language’s standard tooling.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 5. How it all fits together
+
+    1. **README.md** explains the overall purpose and lists all supported languages.
+    2. **index.html** + **style.css** (+ `/fonts`) form a tiny static site so you can load a web page that:
+        * Computes today’s phase in the browser.
+
+        * Shows percent illuminated, age in days/hours, next new/full‑moon, and a week of icons.
+    3. Each **language subdirectory** contains the equivalent algorithm implemented in that language **plus** test cases or a small CLI/frontend driver to verify it works.
+    4. **LICENSE** at root covers the project overall (MIT).
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+That’s the big picture—feel free to dive into any language folder to see how the same algorithm is expressed in C, Rust, Python, Raku, awk, bc, and so on. If you have more questions about a specific part, just let me know!
+
+user
+Write a ruby implementation comparable to the python implementation with test cases showing how to get the illuminated fraction and percent using the new ruby code.
+
+    command
+
+    $ nl -w2 -ba python/moonphase.py
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	# Adapted from "moontool.c" by John Walker: See http://www.fourmilab.ch/moontool/
+     2	def moonphase(date):
+     3	  import math, calendar
+     4	  ud = calendar.timegm(date)
+     5	  eccent = 0.016718 # Eccentricity of Earth's orbit
+     6	  elonge = 278.833540 # Ecliptic longitude of the Sun at epoch 1980.0
+     7	  elongp = 282.596403 # Ecliptic longitude of the Sun at perigee
+     8	  torad = math.pi / 180.0
+     9	  fixangle = lambda a: ((a % 360) + 360) % 360
+    10	
+    11	  # Calculation of the Sun's position
+    12	  day = (ud / 86400 + 2440587.5) - 2444238.5 # Date within epoch
+    13	  m = torad * fixangle(((360 / 365.2422) * day) + elonge - elongp) # Convert from perigee co-ordinates to epoch 1980.0
+    14	
+    15	  # Solve equation of Kepler
+    16	  e = m
+    17	  delta = e - eccent * math.sin(e) - m
+    18	  e = e - delta / (1 - eccent * math.cos(e))
+    19	  while abs(delta) > 1E-6:
+    20	    delta = e - eccent * math.sin(e) - m
+    21	    e = e - delta / (1 - eccent * math.cos(e))
+    22	  ec = e
+    23	  ec = 2 * math.atan(math.sqrt((1 + eccent) / (1 - eccent)) * math.tan(ec / 2)) #  True anomaly
+    24	
+    25	  lambdasun = fixangle(((ec) * (180.0 / math.pi)) + elongp) # Sun's geocentric ecliptic longitude
+    26	  ml = fixangle(13.1763966 * day + 64.975464) # Moon's mean lonigitude at the epoch
+    27	  mm = fixangle(ml - 0.1114041 * day - 349.383063) # 349:  Mean longitude of the perigee at the epoch, Moon's mean anomaly
+    28	  ev = 1.2739 * math.sin(torad * (2 * (ml - lambdasun) - mm)) # Evection
+    29	  ae = 0.1858 * math.sin(m) # Annual equation
+    30	  mmp = torad * (mm + ev - ae - (0.37 * math.sin(m))) # Corrected anomaly
+    31	  lp = ml + ev + (6.2886 * math.sin(mmp)) - ae + (0.214 * math.sin(2 * mmp)) # Corrected longitude
+    32	  lpp = lp + (0.6583 * math.sin(torad * (2 * (lp - lambdasun)))) # True longitude
+    33	  moonage = lpp - lambdasun # Age of the Moon in degrees
+    34	
+    35	  return moonage * torad
+
+
+    command
+
+    $ nl -w2 -ba python/test.py
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	#!/usr/bin/env python
+     2	from moonphase import moonphase
+     3	import math, time
+     4	
+     5	ilf = (lambda d: round(((1-math.cos(moonphase(d)))/2)*100, 1))
+     6	
+     7	assert ilf(time.gmtime(-178070400)) == 1.2
+     8	assert ilf(time.gmtime(361411200)) == 93.6
+     9	assert ilf(time.gmtime(1704931200)) == 0.4
+    10	assert ilf(time.gmtime(2898374400)) == 44.2
+
+
+    command
+
+    $ nl -w2 -ba nim/moonphase.nim
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	import std/math
+     2	
+     3	# Adapted from "moontool.c" by John Walker: See http://www.fourmilab.ch/moontool/
+     4	func moonphase*(ud: float64): float64 =
+     5	  template fixAngle(a: float64): float64 = ((a mod 360) + 360) mod 360
+     6	
+     7	  const
+     8	    eccent = 0.016718
+     9	    elonge = 278.833540
+    10	    elongp = 282.596403
+    11	
+    12	  let
+    13	    day = (ud / 86400.0 + 2440587.5) - 2444238.5
+    14	    m = degToRad fixAngle(((360.0 / 365.2422) * day) + elonge - elongp)
+    15	
+    16	  var
+    17	    e = m
+    18	    delta = e - eccent * e.sin - m
+    19	
+    20	  e = e - delta / (1 - eccent * cos e)
+    21	
+    22	  while delta.abs > 1E-6:
+    23	    delta = e - eccent * e.sin - m
+    24	    e = e - delta / (1 - eccent * cos e)
+    25	
+    26	  var ec = 2 * (sqrt((1 + eccent) / (1 - eccent)) * tan(e / 2)).arctan
+    27	
+    28	  let
+    29	    lambdasun = fixAngle((ec * (180 / PI)) + elongp)
+    30	    ml = fixAngle(13.1763966 * day + 64.975464)
+    31	    mm = fixAngle(ml - 0.1114041 * day - 349.383063)
+    32	    ev = 1.2739 * sin(degToRad(2.0 * (ml - lambdasun) - mm))
+    33	    ae = 0.1858 * sin m
+    34	    mmp = degToRad(mm + ev - ae - (0.37 * sin m))
+    35	    lp = ml + ev + (6.2886 * sin(mmp) - ae + (0.214 * sin(2.0 * mmp)))
+    36	    lpp = lp + (0.6583 * sin(degToRad(2.0 * (lp - lambdasun))))
+    37	    moonAge = lpp - lambdasun
+    38	
+    39	  degToRad moonAge
+    40	
+    41	when isMainModule:
+    42	  func illumfrac(d: float64): float64 = ((1 - cos d) / 2) * 100
+    43	
+    44	  doAssert illumfrac(moonphase(-178070400.0)).round(1) == 1.2
+    45	  doAssert illumfrac(moonphase(361411200.0)).round(1) == 93.6
+    46	  doAssert illumfrac(moonphase(1704931200.0)).round(1) == 0.4
+    47	  doAssert illumfrac(moonphase(2898374400.0)).round(1) == 44.2
+
+
+    command
+
+    $ nl -w2 -ba raku/moonphase.raku
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	#!/usr/bin/env raku
+     2	
+     3	use lib './lib';
+     4	use Moonphase;
+     5	
+     6	sub moon-illumination($timestamp) {
+     7	    my $inst = Instant.from-posix: $timestamp;
+     8	
+     9	    return ((1 - cos moonphase($inst)) / 2) * 100;
+    10	}
+    11	
+    12	say "Running assertions…";
+    13	
+    14	my &mi = &moon-illumination;
+    15	
+    16	# Using POSIX timestamps
+    17	die "Failed 1" unless &mi(-178070400).round(0.1) ==  1.2;
+    18	die "Failed 2" unless &mi( 361411200).round(0.1) == 93.6;
+    19	die "Failed 3" unless &mi(1704931200).round(0.1) ==  0.4;
+    20	die "Failed 4" unless &mi(2898374400).round(0.1) == 44.2;
+    21	
+    22	say "All tests passed.";
+
+
+    command
+
+    $ nl -w2 -ba lua/moonphase.lua
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	-- Adapted from "moontool.c" by John Walker: See http://www.fourmilab.ch/moontool/
+     2	function moonphase(ud)
+     3	  local eccent = 0.016718 -- Eccentricity of Earth's orbit
+     4	  local elonge = 278.833540 -- Ecliptic longitude of the Sun at epoch 1980.0
+     5	  local elongp = 282.596403 -- Ecliptic longitude of the Sun at perigee
+     6	  local torad = math.pi / 180.0
+     7	  local fixangle = function (a) return ((a % 360) + 360) % 360 end
+     8	
+     9	  -- Calculation of the Sun's position
+    10	  local Day = (ud / 86400 + 2440587.5) - 2444238.5 -- Date within epoch
+    11	  local M = torad * fixangle(((360 / 365.2422) * Day) + elonge - elongp) -- Convert from perigee co-ordinates to epoch 1980.0
+    12	
+    13	  -- Solve equation of Kepler
+    14	  local e = M
+    15	  local delta
+    16	  delta = e - eccent * math.sin(e) - M
+    17	  e = e - delta / (1 - eccent * math.cos(e))
+    18	  while math.abs(delta) > 1E-6 do
+    19	    delta = e - eccent * math.sin(e) - M
+    20	    e = e - delta / (1 - eccent * math.cos(e))
+    21	  end
+    22	  local Ec = e;
+    23	  Ec = 2 * math.atan(math.sqrt((1 + eccent) / (1 - eccent)) * math.tan(Ec / 2)) --  True anomaly
+    24	
+    25	  local Lambdasun = fixangle(((Ec) * (180.0 / math.pi)) + elongp) -- Sun's geocentric ecliptic longitude
+    26	  local ml = fixangle(13.1763966 * Day + 64.975464) -- Moon's mean lonigitude at the epoch
+    27	  local MM = fixangle(ml - 0.1114041 * Day - 349.383063) -- 349:  Mean longitude of the perigee at the epoch, Moon's mean anomaly
+    28	  local Ev = 1.2739 * math.sin(torad * (2 * (ml - Lambdasun) - MM)) -- Evection
+    29	  local Ae = 0.1858 * math.sin(M) -- Annual equation
+    30	  local MmP = torad * (MM + Ev - Ae - (0.37 * math.sin(M))) -- Corrected anomaly
+    31	  local lP = ml + Ev + (6.2886 * math.sin(MmP)) - Ae + (0.214 * math.sin(2 * MmP)) -- Corrected longitude
+    32	  local lPP = lP + (0.6583 * math.sin(torad * (2 * (lP - Lambdasun)))) -- True longitude
+    33	  local MoonAge = lPP - Lambdasun -- Age of the Moon in degrees
+    34	
+    35	  return MoonAge * torad
+    36	end
+
+
+    command
+
+    $ nl -w2 -ba lua/frontend.lua
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	#!/usr/bin/env lua
+     2	require("moonphase")
+     3	print(string.format("%2.1f", ((1 - math.cos(moonphase(tonumber(arg[1])))) / 2)*100))
+
+
+    command
+
+    $ nl -w2 -ba lua/Makefile
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	all: test
+     2	
+     3	test:
+     4		test `./frontend.lua -178070400` = 1.2
+     5		test `./frontend.lua 361411200` = 93.6
+     6		test `./frontend.lua 1704931200` = 0.4
+     7		test `./frontend.lua 2898374400` = 44.2
+
+
+    command
+
+    $ nl -w2 -ba README.md | sed -n '10,26p'
+
+    command.stdout (code: 0, duration: 0s)
+
+    10	
+    11	Scripting Languages:
+    12	* Arturo
+    13	* Lua
+    14	* Janet
+    15	* JavaScript
+    16	* Python
+    17	* Raku
+    18	
+    19	DSLs:
+    20	* awk
+    21	* [bc](https://en.wikipedia.org/wiki/Bc_(programming_language))
+    22	
+    23	These functions take a time as an input (usually in unix epoch seconds or the languages official way of doing time),
+    24	and return the "age" of the moon in radians, such that `(1-cos(x))/2` returns the illuminated fraction of the moons
+    25	surface, this indirection is needed because across a full cycle, the same illuminated percent appears more than once,
+    26	the first and third quarter are a good example.
+
+
+    command
+
+    $ apply_patch << 'EOF'
+    *** Begin Patch
+    *** Update File: README.md
+    @@
+    -* Python
+    -* Raku
+    +* Python
+    +* Ruby
+    +* Raku
+    *** End Patch
+    EOF
+
+    command.stdout (code: 0, duration: 0s)
+
+    Done!
+
+    command
+
+    $ apply_patch << 'EOF'
+    *** Begin Patch
+    *** Add File: ruby/moonphase.rb
+    +#!/usr/bin/env ruby
+    +# Adapted from "moontool.c" by John Walker: http://www.fourmilab.ch/moontool/
+    +# Returns the age of the moon in radians for the given Time object
+    +def moonphase(time)
+    +  ud = time.to_i
+    +  eccent = 0.016718 # Eccentricity of Earth's orbit
+    +  elonge = 278.833540 # Ecliptic longitude of the Sun at epoch 1980.0
+    +  elongp = 282.596403 # Ecliptic longitude of the Sun at perigee
+    +  torad = Math::PI / 180.0
+    +  fixangle = ->(a) { ((a % 360) + 360) % 360 }
+    +
+    +  # Calculation of the Sun's position
+    +  day = (ud / 86400.0 + 2440587.5) - 2444238.5
+    +  m = torad * fixangle.call((360.0 / 365.2422) * day + elonge - elongp)
+    +
+    +  # Solve Kepler's equation
+    +  e = m
+    +  delta = e - eccent * Math.sin(e) - m
+    +  e -= delta / (1 - eccent * Math.cos(e))
+    +  while delta.abs > 1e-6
+    +    delta = e - eccent * Math.sin(e) - m
+    +    e -= delta / (1 - eccent * Math.cos(e))
+    +  end
+    +  ec = 2 * Math.atan(Math.sqrt((1 + eccent) / (1 - eccent)) * Math.tan(e / 2))
+    +
+    +  lambdasun = fixangle.call(ec * (180.0 / Math::PI) + elongp)
+    +  ml = fixangle.call(13.1763966 * day + 64.975464)
+    +  mm = fixangle.call(ml - 0.1114041 * day - 349.383063)
+    +  ev = 1.2739 * Math.sin(torad * (2 * (ml - lambdasun) - mm))
+    +  ae = 0.1858 * Math.sin(m)
+    +  mmp = torad * (mm + ev - ae - 0.37 * Math.sin(m))
+    +  lp = ml + ev + 6.2886 * Math.sin(mmp) - ae + 0.214 * Math.sin(2 * mmp)
+    +  lpp = lp + 0.6583 * Math.sin(torad * (2 * (lp - lambdasun)))
+    +  moonage = lpp - lambdasun
+    +
+    +  fixangle.call(moonage) * torad
+    +end
+    *** End Patch
+    EOF
+
+    command.stdout (code: 0, duration: 0s)
+
+    Done!
+
+    command
+
+    $ apply_patch << 'EOF'
+    *** Begin Patch
+    *** Add File: ruby/test.rb
+    +#!/usr/bin/env ruby
+    +require_relative 'moonphase'
+    +
+    +# Returns the illuminated fraction (0.0–1.0)
+    +def illum_frac(time)
+    +  (1 - Math.cos(moonphase(time))) / 2.0
+    +end
+    +
+    +# Returns the illuminated percentage (0.0–100.0), rounded to 1 decimal place
+    +def illum_pct(time)
+    +  (illum_frac(time) * 100).round(1)
+    +end
+    +
+    +# Test cases using POSIX timestamps
+    +test_cases = {
+    +  -178070400 => 1.2,
+    +   361411200 => 93.6,
+    +  1704931200 => 0.4,
+    +  2898374400 => 44.2
+    +}
+    +
+    +test_cases.each do |ts, expected|
+    +  t = Time.at(ts).utc
+    +  actual = illum_pct(t)
+    +  if actual != expected
+    +    warn "Test failed for #{ts}: got #{actual}, expected #{expected}"
+    +    exit 1
+    +  end
+    +end
+    +
+    +puts "All tests passed."
+    *** End Patch
+    EOF
+
+    command.stdout (code: 0, duration: 0s)
+
+    Done!
+
+    command
+
+    $ ls -1
+
+    command.stdout (code: 0, duration: 0s)
+
+    arturo
+    awk
+    bc
+    c
+    fonts
+    index.html
+    janet
+    js
+    LICENSE
+    lua
+    nim
+    python
+    raku
+    README.md
+    ruby
+    rust
+    style.css
+    zig
+
+
+    command
+
+    $ nl -w2 -ba ruby/moonphase.rb
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	#!/usr/bin/env ruby
+     2	# Adapted from "moontool.c" by John Walker: http://www.fourmilab.ch/moontool/
+     3	# Returns the age of the moon in radians for the given Time object
+     4	def moonphase(time)
+     5	  ud = time.to_i
+     6	  eccent = 0.016718 # Eccentricity of Earth's orbit
+     7	  elonge = 278.833540 # Ecliptic longitude of the Sun at epoch 1980.0
+     8	  elongp = 282.596403 # Ecliptic longitude of the Sun at perigee
+     9	  torad = Math::PI / 180.0
+    10	  fixangle = ->(a) { ((a % 360) + 360) % 360 }
+    11	
+    12	  # Calculation of the Sun's position
+    13	  day = (ud / 86400.0 + 2440587.5) - 2444238.5
+    14	  m = torad * fixangle.call((360.0 / 365.2422) * day + elonge - elongp)
+    15	
+    16	  # Solve Kepler's equation
+    17	  e = m
+    18	  delta = e - eccent * Math.sin(e) - m
+    19	  e -= delta / (1 - eccent * Math.cos(e))
+    20	  while delta.abs > 1e-6
+    21	    delta = e - eccent * Math.sin(e) - m
+    22	    e -= delta / (1 - eccent * Math.cos(e))
+    23	  end
+    24	  ec = 2 * Math.atan(Math.sqrt((1 + eccent) / (1 - eccent)) * Math.tan(e / 2))
+    25	
+    26	  lambdasun = fixangle.call(ec * (180.0 / Math::PI) + elongp)
+    27	  ml = fixangle.call(13.1763966 * day + 64.975464)
+    28	  mm = fixangle.call(ml - 0.1114041 * day - 349.383063)
+    29	  ev = 1.2739 * Math.sin(torad * (2 * (ml - lambdasun) - mm))
+    30	  ae = 0.1858 * Math.sin(m)
+    31	  mmp = torad * (mm + ev - ae - 0.37 * Math.sin(m))
+    32	  lp = ml + ev + 6.2886 * Math.sin(mmp) - ae + 0.214 * Math.sin(2 * mmp)
+    33	  lpp = lp + 0.6583 * Math.sin(torad * (2 * (lp - lambdasun)))
+    34	  moonage = lpp - lambdasun
+    35	
+    36	  fixangle.call(moonage) * torad
+    37	end
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+    command
+
+    $ nl -w2 -ba ruby/test.rb
+
+    command.stdout (code: 0, duration: 0s)
+
+     1	#!/usr/bin/env ruby
+     2	require_relative 'moonphase'
+     3	
+     4	# Returns the illuminated fraction (0.0–1.0)
+     5	def illum_frac(time)
+     6	  (1 - Math.cos(moonphase(time))) / 2.0
+     7	end
+     8	
+     9	# Returns the illuminated percentage (0.0–100.0), rounded to 1 decimal place
+    10	def illum_pct(time)
+    11	  (illum_frac(time) * 100).round(1)
+    12	end
+    13	
+    14	# Test cases using POSIX timestamps
+    15	test_cases = {
+    16	  -178070400 => 1.2,
+    17	   361411200 => 93.6,
+    18	  1704931200 => 0.4,
+    19	  2898374400 => 44.2
+    20	}
+    21	
+    22	test_cases.each do |ts, expected|
+    23	  t = Time.at(ts).utc
+    24	  actual = illum_pct(t)
+    25	  if actual != expected
+    26	    warn "Test failed for #{ts}: got #{actual}, expected #{expected}"
+    27	    exit 1
+    28	  end
+    29	end
+    30	
+    31	puts "All tests passed."
+
+    command
+
+    $ cd ruby && ruby test.rb
+
+    command.stdout (code: 0, duration: 0.1s)
+
+    All tests passed.
+
+
+    command
+
+    $ ls -a | grep -i pre-commit
+
+    command.stdout (code: 1, duration: 0s)
+
+
+codex
+I’ve added a brand‑new Ruby implementation alongside a small test harness that mirrors the Python style.  Here’s what changed:
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+### 1. README.md
+
+Inserted Ruby into the “Scripting Languages” list so it’s now discoverable.
+
+    @@
+    -* Python
+    -* Raku
+    +* Python
+    +* Ruby
+    +* Raku
+
+README.md (/Users/REDACTED/Developer/moonphase/README.md)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+### 2. ruby/moonphase.rb
+
+A self‑contained moonphase(time) method that takes a Ruby Time object and returns the moon’s age in radians.  It’s a line‑by‑line port of the classic “moontool” algorithm.
+
+    #!/usr/bin/env ruby
+    # Adapted from "moontool.c" by John Walker: http://www.fourmilab.ch/moontool/
+    # Returns the age of the moon in radians for the given Time object
+    def moonphase(time)
+      ud = time.to_i
+      eccent = 0.016718 # Eccentricity of Earth's orbit
+      elonge = 278.833540 # Ecliptic longitude of the Sun at epoch 1980.0
+      elongp = 282.596403 # Ecliptic longitude of the Sun at perigee
+      torad = Math::PI / 180.0
+      fixangle = ->(a) { ((a % 360) + 360) % 360 }
+
+      # Calculation of the Sun's position
+      day = (ud / 86400.0 + 2440587.5) - 2444238.5
+      m = torad * fixangle.call((360.0 / 365.2422) * day + elonge - elongp)
+
+      # Solve Kepler's equation
+      e = m
+      delta = e - eccent * Math.sin(e) - m
+      e -= delta / (1 - eccent * Math.cos(e))
+      while delta.abs > 1e-6
+        delta = e - eccent * Math.sin(e) - m
+        e -= delta / (1 - eccent * Math.cos(e))
+      end
+      ec = 2 * Math.atan(Math.sqrt((1 + eccent) / (1 - eccent)) * Math.tan(e / 2))
+
+      lambdasun = fixangle.call(ec * (180.0 / Math::PI) + elongp)
+      ml        = fixangle.call(13.1763966 * day + 64.975464)
+      mm        = fixangle.call(ml - 0.1114041 * day - 349.383063)
+      ev        = 1.2739 * Math.sin(torad * (2 * (ml - lambdasun) - mm))
+      ae        = 0.1858 * Math.sin(m)
+      mmp       = torad * (mm + ev - ae - 0.37 * Math.sin(m))
+      lp        = ml + ev + 6.2886 * Math.sin(mmp) - ae + 0.214 * Math.sin(2 * mmp)
+      lpp       = lp + 0.6583 * Math.sin(torad * (2 * (lp - lambdasun)))
+      moonage   = lpp - lambdasun
+
+      fixangle.call(moonage) * torad
+    end
+
+ruby/moonphase.rb (/Users/REDACTED/Developer/moonphase/ruby/moonphase.rb)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+### 3. ruby/test.rb
+
+Demonstrates how to compute both the illuminated fraction (0–1) and the percent illuminated (0–100), and includes assertions against known POSIX‐timestamp test vectors:
+
+    #!/usr/bin/env ruby
+    require_relative 'moonphase'
+
+    # Returns the illuminated fraction (0.0–1.0)
+    def illum_frac(time)
+      (1 - Math.cos(moonphase(time))) / 2.0
+    end
+
+    # Returns the illuminated percentage (0.0–100.0), rounded to 1 decimal place
+    def illum_pct(time)
+      (illum_frac(time) * 100).round(1)
+    end
+
+    # Test cases using POSIX timestamps
+    test_cases = {
+      -178070400 => 1.2,
+       361411200 => 93.6,
+      1704931200 => 0.4,
+      2898374400 => 44.2
+    }
+
+    test_cases.each do |ts, expected|
+      t      = Time.at(ts).utc
+      actual = illum_pct(t)
+      if actual != expected
+        warn "Test failed for #{ts}: got #{actual}, expected #{expected}"
+        exit 1
+      end
+    end
+
+    puts "All tests passed."
+
+ruby/test.rb (/Users/REDACTED/Developer/moonphase/ruby/test.rb)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+### 4. Verification
+
+    $ cd ruby
+    $ ruby test.rb
+    All tests passed.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+That adds Ruby alongside the other languages with a matching test harness to compute illuminated fraction and percent. Let me know if you’d like anything tweaked!
+
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                                                                                                                                                │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  ctrl+c to exit | "/" to see commands | enter to send — 99% context left
+
