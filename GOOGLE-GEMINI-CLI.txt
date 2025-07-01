@@ -1,0 +1,139 @@
+% gemini
+
+ ███            █████████  ██████████ ██████   ██████ █████ ██████   █████ █████
+░░░███         ███░░░░░███░░███░░░░░█░░██████ ██████ ░░███ ░░██████ ░░███ ░░███
+  ░░░███      ███     ░░░  ░███  █ ░  ░███░█████░███  ░███  ░███░███ ░███  ░███
+    ░░░███   ░███          ░██████    ░███░░███ ░███  ░███  ░███░░███░███  ░███
+     ███░    ░███    █████ ░███░░█    ░███ ░░░  ░███  ░███  ░███ ░░██████  ░███
+   ███░      ░░███  ░░███  ░███ ░   █ ░███      ░███  ░███  ░███  ░░█████  ░███
+ ███░         ░░█████████  ██████████ █████     █████ █████ █████  ░░█████ █████
+░░░            ░░░░░░░░░  ░░░░░░░░░░ ░░░░░     ░░░░░ ░░░░░ ░░░░░    ░░░░░ ░░░░░
+
+
+Tips for getting started:
+1. Ask questions, edit files, or run commands.
+2. Be specific for the best results.
+3. Create GEMINI.md files to customize your interactions with Gemini.
+4. /help for more information.
+
+
+> Write a ruby implementation comparable to the python implementation with test cases showing how to get the illuminated fraction and percent using the new ruby code.
+
+ ╭──────────────────────────────────╮
+ │ ✔  ReadFile python/moonphase.py  │
+ ╰──────────────────────────────────╯
+✦ Okay, I'll create a Ruby implementation of the moonphase calculation and demonstrate its use. First, I'll create a directory for the Ruby code.
+ ╭──────────────────────╮
+ │ ✔  Shell mkdir ruby  │
+ ╰──────────────────────╯
+✦ Now, I will write the Ruby code, which will be a port of the Python code you provided.
+ ╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+ │ ✔  WriteFile Writing to ruby/moonphase.rb                                                                                                                                                                       │
+ │                                                                                                                                                                                                                 │
+ │     1 # frozen_string_literal: true                                                                                                                                                                             │
+ │     2                                                                                                                                                                                                           │
+ │     3 # Adapted from "moontool.c" by John Walker: See http://www.fourmilab.ch/moontool/                                                                                                                         │
+ │     4 module Moonphase                                                                                                                                                                                          │
+ │     5   extend self                                                                                                                                                                                             │
+ │     6                                                                                                                                                                                                           │
+ │     7   ECCENT = 0.016718 # Eccentricity of Earth's orbit                                                                                                                                                       │
+ │     8   ELONGE = 278.833540 # Ecliptic longitude of the Sun at epoch 1980.0                                                                                                                                     │
+ │     9   ELONGP = 282.596403 # Ecliptic longitude of the Sun at perigee                                                                                                                                          │
+ │    10   TORAD = Math::PI / 180.0                                                                                                                                                                                │
+ │    11                                                                                                                                                                                                           │
+ │    12   def fixangle(a)                                                                                                                                                                                         │
+ │    13     ((a % 360) + 360) % 360                                                                                                                                                                               │
+ │    14   end                                                                                                                                                                                                     │
+ │    15                                                                                                                                                                                                           │
+ │    16   def moonphase(date)                                                                                                                                                                                     │
+ │    17     # Calculation of the Sun's position                                                                                                                                                                   │
+ │    18     day = (date.to_time.to_i / 86_400 + 2_440_587.5) - 2_444_238.5 # Date within epoch                                                                                                                    │
+ │    19     m = TORAD * fixangle(((360 / 365.2422) * day) + ELONGE - ELONGP) # Convert from perigee co-ordinates to epoch 1980.0                                                                                  │
+ │    20                                                                                                                                                                                                           │
+ │    21     # Solve equation of Kepler                                                                                                                                                                            │
+ │    22     e = m                                                                                                                                                                                                 │
+ │    23     delta = e - ECCENT * Math.sin(e) - m                                                                                                                                                                  │
+ │    24     e -= delta / (1 - ECCENT * Math.cos(e))                                                                                                                                                               │
+ │    25     while delta.abs > 1E-6                                                                                                                                                                                │
+ │    26       delta = e - ECCENT * Math.sin(e) - m                                                                                                                                                                │
+ │    27       e -= delta / (1 - ECCENT * Math.cos(e))                                                                                                                                                             │
+ │    28     end                                                                                                                                                                                                   │
+ │    29     ec = e                                                                                                                                                                                                │
+ │    30     ec = 2 * Math.atan(Math.sqrt((1 + ECCENT) / (1 - ECCENT)) * Math.tan(ec / 2)) #  True anomaly                                                                                                         │
+ │    31                                                                                                                                                                                                           │
+ │    32     lambdasun = fixangle((ec * (180.0 / Math::PI)) + ELONGP) # Sun's geocentric ecliptic longitude                                                                                                        │
+ │    33     ml = fixangle(13.1763966 * day + 64.975464) # Moon's mean lonigitude at the epoch                                                                                                                     │
+ │    34     mm = fixangle(ml - 0.1114041 * day - 349.383063) # 349:  Mean longitude of the perigee at the epoch, Moon's mean anomaly                                                                              │
+ │    35     ev = 1.2739 * Math.sin(TORAD * (2 * (ml - lambdasun) - mm)) # Evection                                                                                                                                │
+ │    36     ae = 0.1858 * Math.sin(m) # Annual equation                                                                                                                                                           │
+ │    37     mmp = TORAD * (mm + ev - ae - (0.37 * Math.sin(m))) # Corrected anomaly                                                                                                                               │
+ │    38     lp = ml + ev + (6.2886 * Math.sin(mmp)) - ae + (0.214 * Math.sin(2 * mmp)) # Corrected longitude                                                                                                      │
+ │    39     lpp = lp + (0.6583 * Math.sin(TORAD * (2 * (lp - lambdasun)))) # True longitude                                                                                                                       │
+ │    40     moonage = lpp - lambdasun # Age of the Moon in degrees                                                                                                                                                │
+ │    41                                                                                                                                                                                                           │
+ │    42     moonage * TORAD                                                                                                                                                                                       │
+ │    43   end                                                                                                                                                                                                     │
+ │    44                                                                                                                                                                                                           │
+ │    45   def illuminated(angle)                                                                                                                                                                                  │
+ │    46     (1 - Math.cos(angle)) / 2                                                                                                                                                                             │
+ │    47   end                                                                                                                                                                                                     │
+ │    48 end                                                                                                                                                                                                       │
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ Now, here are the test cases that show how to use the new module.
+ ╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+ │ ✔  WriteFile Writing to ruby/test.rb                                                                                                                                                                            │
+ │                                                                                                                                                                                                                 │
+ │     1 require "minitest/autorun"                                                                                                                                                                                │
+ │     2 require "date"                                                                                                                                                                                            │
+ │     3 require_relative "moonphase"                                                                                                                                                                              │
+ │     4                                                                                                                                                                                                           │
+ │     5 class TestMoonphase < Minitest::Test                                                                                                                                                                      │
+ │     6   def test_moonphase                                                                                                                                                                                      │
+ │     7     date = Date.new(2024, 7, 1)                                                                                                                                                                           │
+ │     8     angle = Moonphase.moonphase(date)                                                                                                                                                                     │
+ │     9     illuminated_fraction = Moonphase.illuminated(angle)                                                                                                                                                   │
+ │    10     illuminated_percent = illuminated_fraction * 100                                                                                                                                                      │
+ │    11                                                                                                                                                                                                           │
+ │    12     assert_in_delta(0.278, illuminated_fraction, 0.01)                                                                                                                                                    │
+ │    13     assert_in_delta(27.8, illuminated_percent, 1)                                                                                                                                                         │
+ │    14   end                                                                                                                                                                                                     │
+ │    15 end                                                                                                                                                                                                       │
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ Now, I'll run the tests to verify the implementation.
+ ╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+ │ ✔  Shell ruby ruby/test.rb                                                                                                                                                                                      │
+ │                                                                                                                                                                                                                 │
+ │    Run options: --seed 18372                                                                                                                                                                                    │
+ │                                                                                                                                                                                                                 │
+ │    # Running:                                                                                                                                                                                                   │
+ │                                                                                                                                                                                                                 │
+ │    .                                                                                                                                                                                                            │
+ │                                                                                                                                                                                                                 │
+ │    Finished in 0.000526s, 1901.1414 runs/s, 3802.2827 assertions/s.                                                                                                                                             │
+ │                                                                                                                                                                                                                 │
+ │    1 runs, 2 assertions, 0 failures, 0 errors, 0 skips                                                                                                                                                          │
+ │                                                                                                                                                                                                                 │
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ The tests passed, so the Ruby implementation is working correctly. I have created ruby/moonphase.rb and ruby/test.rb. Is there anything else I can help you with?
+
+> /quit
+
+╭─────────────────────────────────╮
+│                                 │
+│  Agent powering down. Goodbye!  │
+│                                 │
+│                                 │
+│  Cumulative Stats (1 Turns)     │
+│                                 │
+│  Input Tokens           51,326  │
+│  Output Tokens           1,181  │
+│  Thoughts Tokens           599  │
+│  ─────────────────────────────  │
+│  Total Tokens           53,106  │
+│                                 │
+│  Total duration (API)    27.3s  │
+│  Total duration (wall)  5m 55s  │
+│                                 │
+╰─────────────────────────────────╯
+
+
